@@ -16,6 +16,18 @@ import random
 import warnings
 warnings.filterwarnings("ignore")
 
+def evaluate(sample_img_ids, best_captions, capgen):
+    results = []
+    references = {}
+    hypothesis = {}
+    for idx, img_id in enumerate(sample_img_ids):
+        res_dict = {'image_id': img_id, 'caption':best_captions[idx]}
+        ref_caption_ids = capgen.coco.coco.getAnnIds(img_id)
+        references[img_id] = {img_id: [capgen.coco.coco.anns[ann_id]['caption'] for ann_id in ref_caption_ids]}
+        hypothesis[img_id] = {img_id: [best_captions[idx]]}
+        results.append(res_dict)
+    return results, references, hypothesis
+
 def main():
     ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
     coco_dataset = CocoCaptions(
@@ -48,15 +60,8 @@ def main():
     best_captions = capgen.get_captions(sample_imgs)
 
     # save results
-    results = []
-    references = {}
-    hypothesis = {}
-    for idx, img_id in enumerate(sample_img_ids):
-        res_dict = {'image_id': img_id, 'caption':best_captions[idx]}
-        ref_caption_ids = capgen.coco.coco.getAnnIds(img_id)
-        references[img_id] = {img_id: [capgen.coco.coco.anns[ann_id]['caption'] for ann_id in ref_caption_ids]}
-        hypothesis[img_id] = {img_id: [best_captions[idx]]}
-        results.append(res_dict)
+    results, references, hypothesis = evaluate(sample_img_ids, best_captions, capgen)
+
     with open(res_file, 'w') as f:
         json.dump(results, f)
 
@@ -69,8 +74,8 @@ def main():
     print("--------------------------------------------------------------------------------")
     for idx, img_id in enumerate(sample_img_ids):
         real_caption = references[img_id][img_id][0]
-        scores, _ = Bleu().compute_score(references[img_id],hypothesis[img_id])
-        bleu = scores[2] # 3-gram
+        bleu, scores = Bleu(4).compute_score(references[img_id],hypothesis[img_id], verbose=0)
+        # bleu = scores[2] # 3-gram
         print(f"ID: {img_id} \n Real caption (1 of 5): {real_caption} \n Sampled caption: {best_captions[idx]} \n BLEU: {bleu}")
 
 if __name__ == "__main__":

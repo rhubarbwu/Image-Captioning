@@ -104,7 +104,7 @@ class CaptionGenerator():
             for i in range(len(raw_captions)):
                 references = raw_captions.copy()
                 hypothesis = [references.pop(i)]
-                scores, _ = Bleu().compute_score({idx:references},{idx:hypothesis})
+                scores, _ = Bleu(4).compute_score({idx:references},{idx:hypothesis}, verbose=0)
                 caption_scores[i] = scores[2] # 3-gram
             # get best caption based on highest BLEU score
             best_caption = raw_captions[caption_scores.argmax()]
