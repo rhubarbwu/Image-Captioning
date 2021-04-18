@@ -12,42 +12,59 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from pycocotools.coco import COCO
 from nltk.translate import bleu_score
+import pickle
+import numba
 
 from feature_extraction import ImageFeature
 
 class CaptionGenerator():
-	def __init__(self, ann_file, k=10, early_stop=None):
+	def __init__(self, ann_file, k=10, early_stop=None, load_knn=None):
 		""" CaptionGenerator
 		:param ann_file (str): path to annotation file to use from COCO dataset (train vs. val vs. test). 
 							   Ex: '../annotations/annotations_trainval2014/annotations/captions_val2014.json'
-		:param early_stop (int) : optional parameter of how many images to use from dataset
+		:param k (int): number of clusters
+		:param early_stop (int): optional parameter of how many images to use from dataset
+		:param load_knn (str): optional parameter of path for NearestNeighbor object to load and use
 		"""
 
 		# Load COCO data from annotation file
 		self.coco = COCO(ann_file)
 
-		# Extract image features using `feature_extraction` for all images from loaded coco object
-		num_imgs = len(self.coco.imgs)
-		if early_stop:
-			num_imgs = early_stop
-			print(f"Using early stop at {num_imgs} images")
+		if load_knn:
+			self.neigh = pickle.load(open(load_knn, 'rb'))
+			self.img_map = pickle.load(open(load_knn+"img_map", 'rb'))
+		else:
+			# Extract image features using `feature_extraction` for all images from loaded coco object
+			self.num_imgs = len(self.coco.imgs)
+			if early_stop:
+				self.num_imgs = early_stop
+				print(f"Using early stop at {self.num_imgs} images")
 
-		self.img_feats = np.empty((num_imgs, 2048))
+			self.extract_features()
+
+			# Fit entire dataset to k nearest neighbours
+			self.neigh = NearestNeighbors(n_neighbors=k, metric='cosine')
+			self.neigh = self.neigh.fit(self.img_feats)
+
+			# Save KNN model and img map
+			file_path = f'./knn-models/knn_k={k}_num_{self.num_imgs}'
+			neighPickle = open(file_path, 'wb')
+			pickle.dump(self.neigh, neighPickle)  
+			mapPickle = open(file_path+"img_map", "wb")
+			pickle.dump(self.img_map, mapPickle)
+
+	@numba.jit(fastmath=True)
+	def extract_features(self):
+		self.img_feats = np.empty((self.num_imgs, 2048))
 		self.img_map = {}
 		idx = 0
-		for img_id, info in tqdm(self.coco.imgs.items()):
-		    url = info['coco_url']
+		img_ids = list(self.coco.imgs.keys())[:self.num_imgs]
+		for img_id in tqdm(img_ids):
+		    url = self.coco.imgs[img_id]['coco_url']
 		    img_feat = ImageFeature(url).get_vector()
 		    self.img_feats[idx] = img_feat.numpy()
 		    self.img_map[idx] = img_id
 		    idx += 1
-		    if idx == num_imgs:
-		    	# for early stop
-		    	break
-
-		# Fit entire dataset to k nearest neighbours
-		self.neigh = NearestNeighbors(n_neighbors=k, metric='cosine')
-		self.neigh = self.neigh.fit(self.img_feats)
 
 	def get_kneighbors(self, img_feats):
 		"""
