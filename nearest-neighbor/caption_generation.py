@@ -11,7 +11,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from pycocotools.coco import COCO
-from nltk.translate import bleu_score
+# from nltk.translate import bleu_score
+from pycocoevalcap.bleu.bleu import Bleu
 import pickle
 import numba
 
@@ -55,14 +56,12 @@ class CaptionGenerator():
     @numba.jit(fastmath=True)
     def extract_features(self):
         self.img_feats = np.empty((self.num_imgs, 2048))
-        self.cap_map = {}
         self.img_map = {}
         idx = 0
         for img, captions in tqdm(self.coco):
             img_id = self.coco.ids[idx]
             img_feat = self.img_feature_obj.get_vector(img)
             self.img_feats[idx] = img_feat.numpy()
-            self.cap_map[img_id] = captions
             self.img_map[idx] = img_id
             idx += 1
             if idx == self.num_imgs:
@@ -93,19 +92,20 @@ class CaptionGenerator():
 
         # Find consensus caption -- for each caption in cluster, calculate BLEU score from within cluster. Return highest BLEU score caption
         best_captions = []
-        for cluster in self.nearest_neighbors:
-            # get a set of all captions in the cluster and split by whitespace
-            all_captions = [self.cap_map[img_id] for img_id in cluster]
-            raw_captions = [caption for captions in all_captions for caption in captions]
-            all_captions = [caption.split() for captions in all_captions for caption in captions] # get list of 5*k captions
+        for idx, cluster in enumerate(self.nearest_neighbors):
+            # get a set of all captions in the cluster
+            all_cap_ids = [self.coco.coco.getAnnIds(img_id) for img_id in cluster]
+            all_cap_ids = [cap_id for cap_ids in all_cap_ids for cap_id in cap_ids]
+            raw_captions = [self.coco.coco.anns[cap_id]['caption'] for cap_id in all_cap_ids]
+            # all_captions = [self.coco.coco.anns[cap_id]['caption'].split() for cap_id in all_cap_ids] # get list of 5*k captions
 
             # calculate BLEU score for each caption against its cluster
-            caption_scores = np.zeros(len(all_captions)) 
-            for i in range(len(all_captions)):
-                references = all_captions.copy()
-                hypothesis = references.pop(i)
-                caption_scores[i] = bleu_score.sentence_bleu(references, hypothesis)
-            
+            caption_scores = np.zeros(len(raw_captions)) 
+            for i in range(len(raw_captions)):
+                references = raw_captions.copy()
+                hypothesis = [references.pop(i)]
+                scores, _ = Bleu().compute_score({idx:references},{idx:hypothesis})
+                caption_scores[i] = scores[2] # 3-gram
             # get best caption based on highest BLEU score
             best_caption = raw_captions[caption_scores.argmax()]
             best_captions.append(best_caption)
