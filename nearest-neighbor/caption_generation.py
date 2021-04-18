@@ -32,7 +32,7 @@ class CaptionGenerator():
 			num_imgs = early_stop
 			print(f"Using early stop at {num_imgs} images")
 
-		self.img_feats = np.empty((num_imgs, 512))
+		self.img_feats = np.empty((num_imgs, 2048))
 		self.img_map = {}
 		idx = 0
 		for img_id, info in tqdm(self.coco.imgs.items()):
@@ -63,7 +63,7 @@ class CaptionGenerator():
 		"""
 
 		# Extract features for images and get k neighbors
-		img_feats = np.empty((len(img_paths), 512))
+		img_feats = np.empty((len(img_paths), 2048))
 		idx = 0
 		for img_path in img_paths:
 			img_feat = ImageFeature(img_path).get_vector()

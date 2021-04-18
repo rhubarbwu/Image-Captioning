@@ -1,5 +1,5 @@
 """
-Extract feature vector from the "avgpool" layer of ResNet-18 trained off of the ImageNet dataset
+Extract feature vector from the "avgpool" layer of ResNet-50 trained off of the ImageNet dataset
 
 Based off the work of Christina Safka (https://github.com/christiansafka/img2vec/)
 """
@@ -17,9 +17,9 @@ class ImageFeature():
 		""" ImageFeature
 		:param img_path (str): path to image to extract features (can be url beginning with http or local)
 		"""
-		
+
 		# Load pretrained model and select layer
-		self.model = models.resnet18(pretrained=True)
+		self.model = models.resnet50(pretrained=True)
 		self.layer = self.model._modules.get('avgpool')
 		self.model.eval()
 
@@ -38,7 +38,7 @@ class ImageFeature():
 
 
 	def get_vector(self):
-	    my_embedding = torch.zeros(512) # 'avgpool' layer has an output size of 512
+	    my_embedding = torch.zeros(2048) # 'avgpool' layer has an output size of 2048
 
 	    # Define a function that will copy the output of a layer and attach to selected layer
 	    def copy_data(m, i, o):

@@ -18,7 +18,7 @@ def main():
     ann_file = '{}/annotations/captions_{}.json'.format(data_dir, data_type)
 
     k = 10
-    early_stop = 1000
+    early_stop = 2000
     capgen = CaptionGenerator(ann_file, k=k, early_stop=early_stop)
 
     # all_imgs = glob.glob(f'../data/{data_type}/{data_type}/*.jpg')
@@ -32,8 +32,10 @@ def main():
     best_captions = capgen.get_captions(sample_img_urls)
 
     print("-------------------------------------RESULTS-------------------------------------")
+    print(f"Getting caption prediction for images: {sample_img_ids}")
     for idx, img_id in enumerate(sample_img_ids):
         print(f"ID: {img_id} \n Real caption: {capgen.coco.imgToAnns[img_id][0]['caption']} \n Sampled caption: {best_captions[idx]}")
+
 
 if __name__ == "__main__":
     main()
