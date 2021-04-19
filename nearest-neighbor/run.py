@@ -45,8 +45,8 @@ def main():
         annFile= ann_file
     )
 
-    k = 10
-    early_stop = 10000 # set to None to run on entire dataset
+    k = 20
+    early_stop = 20000 # set to None to run on entire dataset
     load_knn = f"./knn-models/knn_k={k}_num_{early_stop}"
     # load_knn = None
     res_file = "./results/val2014_results"

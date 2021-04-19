@@ -13,11 +13,11 @@ from caption_generation import CaptionGenerator
 train_ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
 valid_ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
 
-k = 10
-train_early_stop = 10000 # set to None to run on entire dataset
-val_early_stop = 200
-load_knn = f"./knn-models/knn_k={k}_num_{train_early_stop}"
-# load_knn = None
+k = 20
+train_early_stop = 20000 # set to None to run on entire dataset
+val_early_stop = 1000
+# load_knn = f"./knn-models/knn_k={k}_num_{train_early_stop}"
+load_knn = None
 res_file = f"./results/val2014_k={k}_num_{train_early_stop}_results"
 out_file = f"./results/k={k}_trainnum={train_early_stop}_valnum={val_early_stop}_scores.xlsx"
 
@@ -35,7 +35,7 @@ def evaluate():
         annFile=valid_ann_file
     )
 
-    best_captions, cap_map = capgen.evaluate(val_dataset, early_stop=val_early_stop)
+    best_captions, cap_map = capgen.evaluate(val_dataset, early_stop=val_early_stop) # best_captions = list(dict('image_id':img_id, 'caption':'caption'))
     with open(res_file, 'w') as f:
         json.dump(best_captions, f)
 

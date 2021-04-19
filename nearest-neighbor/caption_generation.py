@@ -91,7 +91,7 @@ class CaptionGenerator():
         best_captions = []
         for idx, cluster in enumerate(self.nearest_neighbors):
             # get best caption based on highest BLEU score
-            consensus_caption = consensus_caption(cluster)
+            consensus_caption = self.consensus_caption(cluster)
             best_captions.append(consensus_caption)
 
         return best_captions
