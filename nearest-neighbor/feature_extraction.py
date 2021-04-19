@@ -29,17 +29,18 @@ class ImageFeature():
                                          std=[0.229, 0.224, 0.225])
         self.to_tensor = transforms.ToTensor()
 
-        # # Read image and save transformed image
-        # if img_path.startswith('http'):
-        #   raw_img = Image.open(requests.get(img_path, stream=True).raw)
-        # else:
-        #   raw_img = Image.open(img_path)
-
 
     def get_vector(self, img):
         """
-        :param img (PIL Image): image to extract features from
+        :param img (PIL Image or str): image (or path to img) to extract features from
         """
+        # Read image and save transformed image
+        if type(img) == str:
+            if img.startswith('http'):
+              img = Image.open(requests.get(img, stream=True).raw)
+            else:
+              img = Image.open(img)
+
         self.img = Variable(self.normalize(self.to_tensor(self.scaler(img.convert("RGB")))).unsqueeze(0))
         my_embedding = torch.zeros(2048) # 'avgpool' layer has an output size of 2048
 

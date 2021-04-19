@@ -11,10 +11,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from pycocotools.coco import COCO
-# from nltk.translate import bleu_score
 from pycocoevalcap.bleu.bleu import Bleu
 import pickle
-import numba
 
 from feature_extraction import ImageFeature
 
@@ -53,7 +51,6 @@ class CaptionGenerator():
             mapPickle = open(file_path+"img_map", "wb")
             pickle.dump(self.img_map, mapPickle)
 
-    @numba.jit(fastmath=True)
     def extract_features(self):
         self.img_feats = np.empty((self.num_imgs, 2048))
         self.img_map = {}
@@ -77,7 +74,7 @@ class CaptionGenerator():
 
     def get_captions(self, imgs):
         """
-        :param imgs (list of PIL Images): PIL images to generate captions for
+        :param imgs (list of PIL Images or str): PIL images (or img paths) to generate captions for
         """
 
         # Extract features for images and get k neighbors
@@ -93,21 +90,64 @@ class CaptionGenerator():
         # Find consensus caption -- for each caption in cluster, calculate BLEU score from within cluster. Return highest BLEU score caption
         best_captions = []
         for idx, cluster in enumerate(self.nearest_neighbors):
-            # get a set of all captions in the cluster
-            all_cap_ids = [self.coco.coco.getAnnIds(img_id) for img_id in cluster]
-            all_cap_ids = [cap_id for cap_ids in all_cap_ids for cap_id in cap_ids]
-            raw_captions = [self.coco.coco.anns[cap_id]['caption'] for cap_id in all_cap_ids]
-            # all_captions = [self.coco.coco.anns[cap_id]['caption'].split() for cap_id in all_cap_ids] # get list of 5*k captions
-
-            # calculate BLEU score for each caption against its cluster
-            caption_scores = np.zeros(len(raw_captions)) 
-            for i in range(len(raw_captions)):
-                references = raw_captions.copy()
-                hypothesis = [references.pop(i)]
-                scores, _ = Bleu().compute_score({idx:references},{idx:hypothesis})
-                caption_scores[i] = scores[2] # 3-gram
             # get best caption based on highest BLEU score
-            best_caption = raw_captions[caption_scores.argmax()]
-            best_captions.append(best_caption)
+            consensus_caption = consensus_caption(cluster)
+            best_captions.append(consensus_caption)
 
         return best_captions
+
+    def consensus_caption(self, cluster):
+        """
+        Given a cluster of img_ids, find consensus caption
+        """
+        # get a set of all captions in the cluster
+        all_cap_ids = [self.coco.coco.getAnnIds(img_id) for img_id in cluster]
+        all_cap_ids = [cap_id for cap_ids in all_cap_ids for cap_id in cap_ids]
+        raw_captions = [self.coco.coco.anns[cap_id]['caption'] for cap_id in all_cap_ids]
+        # all_captions = [self.coco.coco.anns[cap_id]['caption'].split() for cap_id in all_cap_ids] # get list of 5*k captions
+
+        # calculate BLEU score for each caption against its cluster
+        caption_scores = np.zeros(len(raw_captions)) 
+        for i in range(len(raw_captions)):
+            references = raw_captions.copy()
+            hypothesis = [references.pop(i)]
+            scores, _ = Bleu(4).compute_score({i:references},{i:hypothesis}, verbose=0)
+            caption_scores[i] = scores[2] # 3-gram
+
+        return raw_captions[caption_scores.argmax()]
+
+    def evaluate(self, dataset, early_stop=None):
+        """
+        function used to evaluate caption generation
+        :param dataset (torchvision.datasets.COCOCaptions): validation dataset
+        """
+        num_imgs = early_stop if early_stop else len(dataset)
+
+        print("Now building nearest neighbor graph...")
+        img_feats = np.empty((num_imgs, 2048))
+        cap_map = []
+        idx = 0
+        for img, caps in tqdm(dataset):
+            img_id = dataset.ids[idx]
+            img_feat = self.img_feature_obj.get_vector(img)
+            img_feats[idx] = img_feat.numpy()
+            cap_map.append({"image_id":img_id, "caption":caps})
+            idx += 1
+            if idx == num_imgs:
+                break
+
+        self.nearest_neighbors = self.get_kneighbors(img_feats)
+
+        print("Now getting best captions...")
+        best_captions = []
+        idx = 0
+        for cluster in tqdm(self.nearest_neighbors):
+            img_id = dataset.ids[idx]
+            consensus_caption = self.consensus_caption(cluster)
+            best_captions.append({"image_id": img_id, "caption":consensus_caption})
+            idx += 1
+
+        return best_captions, cap_map
+            
+
+
