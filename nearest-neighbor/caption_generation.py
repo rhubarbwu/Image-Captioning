@@ -102,19 +102,31 @@ class CaptionGenerator():
         """
         # get a set of all captions in the cluster
         k = len(cluster)
-        all_raw_captions = [None] * (5*k)
-        indices = np.where(np.in1d(self.coco.ids,cluster))[0]
-        for i, idx in enumerate(indices):
-            raw_captions = self.coco[idx][-1]
-            all_raw_captions[i*5:(i+1)*5+1] = raw_captions
+        # all_raw_captions = [None] * (5*k)
+        # indices = np.where(np.in1d(self.coco.ids,cluster))[0]
+        ann_ids = self.coco.coco.getAnnIds(cluster)
+        all_raw_captions = self.coco.coco.loadAnns(ann_ids)
+        all_raw_captions = [caption_dict['caption'] for caption_dict in all_raw_captions]
+        all_raw_captions = np.array(all_raw_captions, dtype=object)
+        # for i, idx in enumerate(indices):
+            # raw_captions = self.coco[idx][-1]
+            # all_raw_captions[i*5:(i+1)*5+1] = raw_captions
 
         # calculate BLEU score for each caption against its cluster
-        caption_scores = np.zeros(5*k) 
-        for i in range(5*k):
-            references = all_raw_captions.copy()
-            hypothesis = [references.pop(i)]
-            scores, _ = Bleu(4).compute_score({i:references},{i:hypothesis}, verbose=0)
-            caption_scores[i] = scores[2] # 3-gram
+        caption_scores = np.zeros(len(all_raw_captions)) 
+        for i, hypothesis in enumerate(all_raw_captions):
+            # mask = np.ones(len(all_raw_captions), dtype=bool)
+            # mask[i] = False
+            # references = all_raw_captions[mask]
+            references = np.delete(all_raw_captions, i)
+            scores, _ = Bleu(4).compute_score({i:list(references)},{i:[hypothesis]}, verbose=0)
+            caption_scores[i] = scores[3] # 4-gram
+
+        # for i in range(5*k):
+            # references = all_raw_captions.copy()
+            # hypothesis = [references.pop(i)]
+            # scores, _ = Bleu(4).compute_score({i:references},{i:hypothesis}, verbose=0)
+            # caption_scores[i] = scores[3] # 4-gram
 
         return all_raw_captions[caption_scores.argmax()]
 
