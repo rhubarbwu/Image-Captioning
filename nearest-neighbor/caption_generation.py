@@ -101,20 +101,22 @@ class CaptionGenerator():
         Given a cluster of img_ids, find consensus caption
         """
         # get a set of all captions in the cluster
-        all_cap_ids = [self.coco.coco.getAnnIds(img_id) for img_id in cluster]
-        all_cap_ids = [cap_id for cap_ids in all_cap_ids for cap_id in cap_ids]
-        raw_captions = [self.coco.coco.anns[cap_id]['caption'] for cap_id in all_cap_ids]
-        # all_captions = [self.coco.coco.anns[cap_id]['caption'].split() for cap_id in all_cap_ids] # get list of 5*k captions
+        k = len(cluster)
+        all_raw_captions = [None] * (5*k)
+        indices = np.where(np.in1d(self.coco.ids,cluster))[0]
+        for i, idx in enumerate(indices):
+            raw_captions = self.coco[idx][-1]
+            all_raw_captions[i*5:(i+1)*5+1] = raw_captions
 
         # calculate BLEU score for each caption against its cluster
-        caption_scores = np.zeros(len(raw_captions)) 
-        for i in range(len(raw_captions)):
-            references = raw_captions.copy()
+        caption_scores = np.zeros(5*k) 
+        for i in range(5*k):
+            references = all_raw_captions.copy()
             hypothesis = [references.pop(i)]
             scores, _ = Bleu(4).compute_score({i:references},{i:hypothesis}, verbose=0)
             caption_scores[i] = scores[2] # 3-gram
 
-        return raw_captions[caption_scores.argmax()]
+        return all_raw_captions[caption_scores.argmax()]
 
     def evaluate(self, dataset, early_stop=None):
         """
@@ -126,25 +128,27 @@ class CaptionGenerator():
         print("Now building nearest neighbor graph...")
         img_feats = np.empty((num_imgs, 2048))
         cap_map = []
-        idx = 0
+        idx = -1
         for img, caps in tqdm(dataset):
+            img, caps = dataset[idx]
             img_id = dataset.ids[idx]
             img_feat = self.img_feature_obj.get_vector(img)
             img_feats[idx] = img_feat.numpy()
             cap_map.append({"image_id":img_id, "caption":caps})
             idx += 1
+            break
             if idx == num_imgs:
                 break
 
         self.nearest_neighbors = self.get_kneighbors(img_feats)
 
         print("Now getting best captions...")
-        best_captions = []
+        best_captions = [None] * len(self.nearest_neighbors)
         idx = 0
         for cluster in tqdm(self.nearest_neighbors):
             img_id = dataset.ids[idx]
             consensus_caption = self.consensus_caption(cluster)
-            best_captions.append({"image_id": img_id, "caption":consensus_caption})
+            best_captions[idx] = {"image_id": img_id, "caption":consensus_caption}
             idx += 1
 
         return best_captions, cap_map

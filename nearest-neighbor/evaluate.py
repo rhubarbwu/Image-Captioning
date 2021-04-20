@@ -16,8 +16,8 @@ valid_ann_file = "../annotations/annotations_trainval2014/annotations/captions_v
 k = 20
 train_early_stop = 20000 # set to None to run on entire dataset
 val_early_stop = 1000
-# load_knn = f"./knn-models/knn_k={k}_num_{train_early_stop}"
-load_knn = None
+load_knn = f"./knn-models/knn_k={k}_num_{train_early_stop}"
+# load_knn = None
 res_file = f"./results/val2014_k={k}_num_{train_early_stop}_results"
 out_file = f"./results/k={k}_trainnum={train_early_stop}_valnum={val_early_stop}_scores.xlsx"
 

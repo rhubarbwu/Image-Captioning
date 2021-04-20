@@ -23,10 +23,10 @@ class ImageFeature():
         self.layer = self.model._modules.get('avgpool')
         self.model.eval()
 
-        # ResNet-18 expects images to be at least 224x224 and normalized to a specific mean and std dev
+        # ResNet-50 expects images to be at least 224x224 and normalized to a specific mean and std dev
         self.scaler = transforms.Resize((224, 224))
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
+                                              std=[0.229, 0.224, 0.225])
         self.to_tensor = transforms.ToTensor()
 
 
