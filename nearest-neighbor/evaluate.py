@@ -10,7 +10,8 @@ from pycocoevalcap.eval import COCOEvalCap
 
 from caption_generation import CaptionGenerator
 
-train_ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
+### FILL PARAMETERS HERE ###
+train_ann_file = "../annotations/annotations_trainval2014/annotations/captions_train2014.json" 
 valid_ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
 
 k = 80
@@ -23,7 +24,7 @@ out_file = f"./results/k={k}_trainnum={train_early_stop}_valnum={val_early_stop}
 
 def evaluate():
     coco_dataset = CocoCaptions(
-        root="../data/val2014/val2014", 
+        root="../data/train2014/train2014", 
         annFile= train_ann_file
     )
 

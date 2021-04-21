@@ -30,33 +30,35 @@ def evaluate(sample_img_ids, best_captions, capgen):
     return results, references, hypothesis
 
 def main():
-    if len(sys.argv) == 1:
+    if len(sys.argv) == 2:
         sample_random = True
+        load_knn = sys.argv[1]
     elif len(sys.argv) == 3:
         sample_random = False
-        img_path = sys.argv[1]
-        out_dir = sys.argv[2]
+        load_knn = sys.argv[1]
+        img_path = sys.argv[2]
     else:
-        raise Exception(f"Got {len(sys.argv)-1} args, was expecting 2 (path_to_img, output_directory)")
+        raise Exception(f"Got {len(sys.argv)-1} args, was expecting 1 or 2 (path_to_knn-model, [img_path])")
 
-    ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
+    ### CHANGE PARAMETERS HERE ###
+    train_ann_file = "../annotations/annotations_trainval2014/annotations/captions_train2014.json" 
+    valid_ann_file = "../annotations/annotations_trainval2014/annotations/captions_val2014.json" 
+
     coco_dataset = CocoCaptions(
-        root="../data/val2014/val2014", 
-        annFile= ann_file
+        root="../data/train2014/train2014", 
+        annFile= train_ann_file
     )
 
-    k = 20
-    early_stop = 20000 # set to None to run on entire dataset
-    load_knn = f"./knn-models/knn_k={k}_num_{early_stop}"
-    # load_knn = None
-    res_file = "./results/val2014_results"
-    capgen = CaptionGenerator(coco_dataset, k=k, early_stop=early_stop, load_knn=load_knn)
+    k = int(load_knn.split("knn_k=")[-1].split("_num")[0])
+    train_early_stop = int(load_knn.split("_num_")[-1])
+    res_file = f"./results/val2014_k={k}_num_{train_early_stop}_results"
+    capgen = CaptionGenerator(coco_dataset, k=k, early_stop=train_early_stop, load_knn=load_knn)
 
     # get images from validation file
     if sample_random :
         val_dataset = CocoCaptions(
             root="../data/val2014/val2014", 
-            annFile=ann_file
+            annFile=valid_ann_file
         )
         sample_imgs = []
         sample_img_ids = []
@@ -94,7 +96,7 @@ def main():
             print(f"ID: {img_id} \n Real caption (1 of 5): {real_caption} \n Sampled caption: {best_captions[idx]} \n BLEU: {bleu}")
     else:
         print(f"Sampled caption: {best_captions[0]}")
-        out_path = out_dir + "/" + img_path.split("/")[-1]
+        out_path = "results/" + img_path.split("/")[-1]
         if img_path.startswith('http'):
           img = Image.open(requests.get(img_path, stream=True).raw)
         else:
