@@ -2,6 +2,8 @@
 
 Final Project for [CSC413/2516](https://fas.calendar.utoronto.ca/course/csc413h1) [(Winter 2021)](https://csc413-uoft.github.io/2021/).
 
+Also, for CNN-LSTM, we modified and retrained [`muggins`'s implementation](https://github.com/muggin/show-and-tell). You can find our fork [here](https://github.com/rusbridger/show-and-tell).
+
 ### Members
 
 - Shayan Khalili-Moghaddam
@@ -9,7 +11,7 @@ Final Project for [CSC413/2516](https://fas.calendar.utoronto.ca/course/csc413h1
 - Jiyu Nam
   - Contributions: kNN code and experiments; report sections 1, 2, 4, 4.1.
 - Robert Wu
-  - Contributions: CNN-LSTM network code; report sections 3, 4.2(.1), 4.3, Broader Impact.
+  - Contributions: CNN-LSTM network design/code; report sections 3, 4.2(.1), 4.3, Broader Impact.
 
 ## Abstract
 
