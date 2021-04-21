@@ -77,7 +77,7 @@ def main():
 
     if sample_random:
         # evaluate and save results
-        results, references, hypothesis = evaluate(sample_img_ids, best_captions, capgen)
+        results, references, hypothesis = evaluate(img_names, best_captions, capgen)
 
         with open(res_file, 'w') as f:
             json.dump(results, f)

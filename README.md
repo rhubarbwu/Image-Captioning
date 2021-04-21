@@ -21,14 +21,14 @@ In this project, we propose comparing the approach of generating novel image des
 1. Download and save [MS COCO dataset](https://cocodataset.org/#download) in the root "data" and "annotations" folder
 2. Fill in appropriate values for the variables `train_ann_file`, `valid_ann_file`, `k`, `train_early_stop`, `load_knn`, `res_file`, and `out_file` in "nearest-neighbors/evaluate.py" 
 3. Run ```python evaluate.py``` from within the "nearest-neighbors" directory
-4. The nearest-neighbor graph is picked and samed in the "nearest-neighbors/knn-models" and can be provided as `load_knn` in the "nearest-neighbors/evaluate.py" file. 
+4. The nearest-neighbor graph is picked and saved in the "nearest-neighbors/knn-models" and can be provided as `load_knn` in the "nearest-neighbors/evaluate.py" file. 
 
 ### Getting captions for images
 
 To get prediction for random 5 images from validation set:
 
 1. Ensure train and validation annotation files in the "annotations" folder (optionally, edit "nearest-neighbors/run.py where indicated).
-2. Run ```python run.py [path/to/knn-model]``` from within the "nearest-neighbors" directory where the name of the knn-model file is of the form "knn_k={k}_num_{train_early_stop}".
+2. Run ```python run.py [path/to/knn-model]``` from within the "nearest-neighbors" directory where the name of the knn-model file is of the form "knn_k={k}\_num_{train_early_stop}".
 3. Results are printed to console, alongside a sample of the real caption and the 4-gram BLEU scores.
 
 To get prediction for user defined image:
