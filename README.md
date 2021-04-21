@@ -4,7 +4,7 @@ Final Project for [CSC413/2516](https://fas.calendar.utoronto.ca/course/csc413h1
 
 ### Members
 
-- Shayan Khalili-Moghaddam
+- Shayan Khalili-Moghaddam (Contributions: CNN-LSTM network code and training, paper section 4)
 - Jiyu Nam
 - Robert Wu
 
